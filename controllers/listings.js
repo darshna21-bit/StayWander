@@ -1,177 +1,176 @@
 const axios = require("axios");
 const Listing = require("../models/listing");
 
-// ✅ INDEX with CATEGORY FILTER
+// ================= INDEX =================
 module.exports.index = async (req, res) => {
-    const { category, q } = req.query;
+  const { category, q } = req.query;
+  let filter = {};
 
-    let filter = {};
+  if (q) {
+    filter.$or = [
+      { title: { $regex: q, $options: "i" } },
+      { location: { $regex: q, $options: "i" } },
+      { country: { $regex: q, $options: "i" } },
+      { category: { $in: [q] } },
+    ];
+  }
 
-    // 🔍 SEARCH LOGIC
-    if (q) {
-        filter.$or = [
-            { title: { $regex: q, $options: "i" } },
-            { location: { $regex: q, $options: "i" } },
-            { country: { $regex: q, $options: "i" } },
-            { category: { $in: [q] } }
-        ];
-    }
+  if (category) {
+    filter.category = category;
+  }
 
-    // 🏷️ CATEGORY FILTER (from buttons)
-    if (category) {
-        filter.category = category;
-    }
-
-    const allListings = await Listing.find(filter);
-
-    res.render("listings/index.ejs", {
-        allListings,
-        category,
-        q
-    });
+  const allListings = await Listing.find(filter);
+  res.render("listings/index.ejs", { allListings, category, q });
 };
 
-
-// -----------------------------
-
-module.exports.rendernewForm = (req, res) => {   
-    res.render("listings/new.ejs");
+// ================= NEW FORM =================
+module.exports.rendernewForm = (req, res) => {
+  res.render("listings/new.ejs");
 };
+
+// ================= SHOW =================
 module.exports.showListing = async (req, res) => {
-        let { id } = req.params;
-        const listing = await Listing.findById(id)
-           .populate({
-                path: "reviews",
-                populate: {
-                    path: "author",
-                },
-            })
-           .populate("owner");
-        if(!listing) {
-            req.flash("error", "Listing you requested for does not exist!");
-             return res.redirect("/listings");
-        }
-        console.log(listing);
-        res.render("listings/show.ejs", { listing });
+  let { id } = req.params;
 
-    };
-module.exports.createListing = async (req, res, next) => {
-        // 1. Get location entered by user
-        const location = req.body.listing.location;  //jaipur rajasthan
-        const country = req.body.listing.country;     // e.g. India
+  const listing = await Listing.findById(id)
+    .populate({
+      path: "reviews",
+      populate: { path: "author" },
+    })
+    .populate("owner");
 
-        const fullAddress = `${location}, ${country}`;
-        
+  if (!listing) {
+    req.flash("error", "Listing you requested does not exist!");
+    return res.redirect("/listings");
+  }
 
-        // 2. Call OpenStreetMap Geocoding API
-        const geoResponse = await axios.get(
-            "https://nominatim.openstreetmap.org/search",
-            {
-                params: {
-                format: "json",
-                q: fullAddress,
-                limit: 1,
-                },
-            }
-        );
-
-        const geoData = geoResponse.data;
-
-
-        // 3. Safety check
-        if (!geoData.length) {
-                req.flash("error", "Invalid location");
-                return res.redirect("/listings/new");
-        }
-
-        // 4. Convert to GeoJSON format (IMPORTANT)
-        const geometry = {
-                type: "Point",
-                coordinates: [
-                Number(geoData[0].lon), // longitude FIRST
-                Number(geoData[0].lat)  // latitude SECOND
-                ]
-        };
-
-        let url = req.file.path;
-        let filename = req.file.filename;
-
-        const newListing = new Listing(req.body.listing);
-
-        newListing.owner = req.user._id;
-        newListing.image = { url, filename };
-        newListing.geometry = geometry; // ⭐ SAME STEP AS MA’AM
-
-        let savedListing = await newListing.save();
-        console.log(savedListing);
-        req.flash("success", "New Listing Created!");
-        res.redirect("/listings");
+  res.render("listings/show.ejs", { listing });
 };
+
+// ================= CREATE =================
+module.exports.createListing = async (req, res) => {
+  const { location, country } = req.body.listing;
+  const fullAddress = `${location}, ${country}`;
+
+  // 🔥 axios + User-Agent (FIXED)
+  const geoResponse = await axios.get(
+    "https://nominatim.openstreetmap.org/search",
+    {
+      params: {
+        format: "json",
+        q: fullAddress,
+        limit: 1,
+      },
+      headers: {
+        "User-Agent": "StayWander/1.0 (darshna21-bit)",
+      },
+    }
+  );
+
+  const geoData = geoResponse.data;
+
+  if (!geoData.length) {
+    req.flash("error", "Invalid location");
+    return res.redirect("/listings/new");
+  }
+
+  const geometry = {
+    type: "Point",
+    coordinates: [
+      Number(geoData[0].lon),
+      Number(geoData[0].lat),
+    ],
+  };
+
+  const newListing = new Listing(req.body.listing);
+  newListing.owner = req.user._id;
+  newListing.image = {
+    url: req.file.path,
+    filename: req.file.filename,
+  };
+  newListing.geometry = geometry;
+
+  await newListing.save();
+
+  req.flash("success", "New Listing Created!");
+  res.redirect("/listings");
+};
+
+// ================= EDIT FORM =================
 module.exports.renderEditForm = async (req, res) => {
-        let { id } = req.params;
-        const listing = await Listing.findById(id);
-        if(!listing) {
-            req.flash("error", "Listing you requested for does not exist!");
-             return res.redirect("/listings");
-        }
-        let originalImageUrl = listing.image.url;
-        originalImageUrl = originalImageUrl.replace("/upload/", "/upload/w_250/");
-        res.render("listings/edit.ejs", { listing, originalImageUrl});
+  let { id } = req.params;
+  const listing = await Listing.findById(id);
 
+  if (!listing) {
+    req.flash("error", "Listing does not exist!");
+    return res.redirect("/listings");
+  }
+
+  let originalImageUrl = listing.image.url.replace(
+    "/upload/",
+    "/upload/w_250/"
+  );
+
+  res.render("listings/edit.ejs", { listing, originalImageUrl });
 };
 
+// ================= UPDATE =================
 module.exports.updateListing = async (req, res) => {
-    let { id } = req.params;
+  let { id } = req.params;
+  let listing = await Listing.findById(id);
 
-    let listing = await Listing.findById(id);
+  listing.set(req.body.listing);
 
-    // ✅ 1. Update basic fields
-    listing.set(req.body.listing);
+  if (req.body.listing.location) {
+    const fullAddress = `${req.body.listing.location}, ${req.body.listing.country}`;
 
-    // ✅ 2. If location changed → re-geocode
-    if (req.body.listing.location) {
-        const location = req.body.listing.location;
-        const country = req.body.listing.country;
+    // 🔥 axios + User-Agent (FIXED)
+    const geoResponse = await axios.get(
+      "https://nominatim.openstreetmap.org/search",
+      {
+        params: {
+          format: "json",
+          q: fullAddress,
+          limit: 1,
+        },
+        headers: {
+          "User-Agent": "StayWander/1.0 (darshna21-bit)",
+        },
+      }
+    );
 
-        const fullAddress = `${location}, ${country}`;
+    const geoData = geoResponse.data;
 
-        const geoResponse = await fetch(
-            `https://nominatim.openstreetmap.org/search?format=json&q=${fullAddress}&limit=1`
-        );
-        const geoData = await geoResponse.json();
-
-        if (!geoData.length) {
-            req.flash("error", "Invalid location");
-            return res.redirect(`/listings/${id}/edit`);
-        }
-
-        listing.geometry = {
-            type: "Point",
-            coordinates: [
-                Number(geoData[0].lon),
-                Number(geoData[0].lat)
-            ]
-        };
+    if (!geoData.length) {
+      req.flash("error", "Invalid location");
+      return res.redirect(`/listings/${id}/edit`);
     }
 
-    // ✅ 3. If new image uploaded
-    if (req.file) {
-        listing.image = {
-            url: req.file.path,
-            filename: req.file.filename,
-        };
-    }
+    listing.geometry = {
+      type: "Point",
+      coordinates: [
+        Number(geoData[0].lon),
+        Number(geoData[0].lat),
+      ],
+    };
+  }
 
-    await listing.save();
+  if (req.file) {
+    listing.image = {
+      url: req.file.path,
+      filename: req.file.filename,
+    };
+  }
 
-    req.flash("success", "Listing Updated!");
-    res.redirect(`/listings/${id}`);
+  await listing.save();
+  req.flash("success", "Listing Updated!");
+  res.redirect(`/listings/${id}`);
 };
 
+// ================= DELETE =================
 module.exports.destroyListing = async (req, res) => {
-        let { id } = req.params;
-        let deletedListing = await Listing.findByIdAndDelete(id);
-        req.flash("success", "Listing Deleted!");
-        console.log(deletedListing);
-        res.redirect("/listings");
+  let { id } = req.params;
+  await Listing.findByIdAndDelete(id);
+  req.flash("success", "Listing Deleted!");
+  res.redirect("/listings");
 };
