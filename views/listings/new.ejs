@@ -1,0 +1,115 @@
+<% layout("/layouts/boilerplate") %>
+    <div class="row mt-3">
+        <div class="col-8 offset-2">
+            <h3>Create a New Listing</h3>
+            <form method="POST" action="/listings" novalidate class="needs-validation" enctype="multipart/form-data">
+                <div class="mb-3">
+                    <label for="title" class="form-label">Title</label>
+                    <input name="listing[title]" placeholder="Add a catchy title" type="text" class="form-control"
+                        required>
+                    <div class="valid-feedback">Title looks good!</div>
+                </div>
+                <div class="mb-3">
+                    <label for="description" class="form-label">Description</label>
+                    <textarea name="listing[description]" placeholder="enter description" type="text"
+                        class="form-control" required></textarea>
+                    <div class="invalid-feedback">Please enter a short description</div>
+                </div>
+                <div class="mb-3">
+                    <label for="image" class="form-label">Upload Listing Image</label>
+                    <input name="listing[image]" type="file" class="form-control" required>
+                </div>
+                <div class="row">
+                    <div class="mb-3 col-md-4">
+                        <label for="price" class="form-label">Price</label>
+                        <input name="listing[price]" placeholder="1200" class="form-control" required>
+                        <div class="invalid-feedback">Please enter the price</div>
+                    </div>
+                    <div class="mb-3 col-md-8">
+                        <label for="country" class="form-label">Country</label>
+                        <input name="listing[country]" placeholder="India" type="text" class="form-control" required>
+                        <div class="invalid-feedback">Country name should be valid</div>
+                    </div>
+                </div>
+                <!-- ✅ ADD THIS CATEGORY BLOCK -->
+                 <div class="mb-3">
+                    <label class="form-label">Category (select up to 3)</label>
+
+                    <% const categories = [
+                        "Rooms",
+                        "Iconic cities",
+                        "Mountains",
+                        "Castles",
+                        "Amazing pools",
+                        "Camping",
+                        "Farms",
+                        "Arctic",
+                        "Domes",
+                        "Boats"
+                    ]; %>
+
+                    <div class="row">
+                        <% categories.forEach(cat => { %>
+                        <div class="col-md-4 form-check">
+                            <input
+                            class="form-check-input category-checkbox"
+                            type="checkbox"
+                            name="listing[category][]"
+                            value="<%= cat %>"
+                            id="<%= cat %>"
+                            
+                            >
+                            <label class="form-check-label" for="<%= cat %>">
+                            <%= cat %>
+                            </label>
+                        </div>
+                        <% }) %>
+                    </div>
+
+                    <div class="invalid-feedback d-none category-error" style="color:red;">
+                        You can select only up to 3 categories
+                    </div>
+
+
+                </div>             
+                <!-- ✅ END CATEGORY BLOCK -->
+                <div class="mb-3">
+                    <label for="location" class="form-label">Location</label>
+                    <input name="listing[location]" placeholder="Jaipur, Rajasthan" type="text" class="form-control"
+                        required>
+                    <div class="invalid-feedback">Location should be valid</div>
+                </div>
+                <button class="btn btn-dark add-btn mt-3 mb-3">Add</button>
+
+            </form>
+        </div>
+    </div>
+
+<script>
+  const checkboxes = document.querySelectorAll(".category-checkbox");
+  const errorMsg = document.querySelector(".category-error");
+
+  function updateCheckboxState() {
+    const checked = document.querySelectorAll(".category-checkbox:checked");
+
+    if (checked.length >= 3) {
+      errorMsg.classList.remove("d-none");
+
+      checkboxes.forEach(cb => {
+        if (!cb.checked) {
+          cb.disabled = true;
+        }
+      });
+    } else {
+      errorMsg.classList.add("d-none");
+
+      checkboxes.forEach(cb => {
+        cb.disabled = false;
+      });
+    }
+  }
+
+  checkboxes.forEach(cb => {
+    cb.addEventListener("change", updateCheckboxState);
+  });
+</script>
