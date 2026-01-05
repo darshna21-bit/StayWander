@@ -1,3 +1,4 @@
+const axios = require("axios");
 const Listing = require("../models/listing");
 
 // ✅ INDEX with CATEGORY FILTER
@@ -63,10 +64,19 @@ module.exports.createListing = async (req, res, next) => {
         
 
         // 2. Call OpenStreetMap Geocoding API
-        const geoResponse = await fetch(
-                `https://nominatim.openstreetmap.org/search?format=json&q=${fullAddress}&limit=1`
+        const geoResponse = await axios.get(
+            "https://nominatim.openstreetmap.org/search",
+            {
+                params: {
+                format: "json",
+                q: fullAddress,
+                limit: 1,
+                },
+            }
         );
-        const geoData = await geoResponse.json();
+
+        const geoData = geoResponse.data;
+
 
         // 3. Safety check
         if (!geoData.length) {
