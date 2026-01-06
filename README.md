@@ -33,7 +33,7 @@ StayWander is a modern full-stack accommodation platform designed to simulate a 
 ## 📸 Screenshots
 
 <p align="center">
-  <img src="assets/screenshots/home_page.png" width="45%" />
+  <img src="assets/screenshots/Home_page.png" width="45%" />
   <img src="assets/screenshots/forest_villa1.png" width="45%" />
 </p>
 
