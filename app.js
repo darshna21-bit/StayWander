@@ -57,7 +57,7 @@ const sessionOptions = {
     store,
     secret: process.env.SESSION_SECRET,
     resave: false,
-    saveUninitialized: true,
+    saveUninitialized: false,
     cookie: {
         expires: Date.now() + 7 * 24 * 60 * 60 * 1000,
         maxAge: 7 * 24 * 60 * 60 * 1000,
@@ -106,6 +106,9 @@ app.all(/.*/, (req, res, next) => {
 
 
 app.use((err, req, res, next) => {
+    if (res.headersSent) {
+        return next(err); // ✅ prevent double response
+    }
     let { statusCode = 500, message = "Something went wrong!!" } = err;
     res.status(statusCode).render("error.ejs", { message });
 });
