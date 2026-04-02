@@ -11,7 +11,7 @@ StayWander is a modern full-stack accommodation platform designed to simulate a 
 - 🔐 User authentication & authorization (Login / Signup)
 - 🏠 Create, edit & delete property listings (owner-only access)
 - 🖼 Image upload with Cloudinary integration
-- 🧪 End-to-end testing using Cypress (login, listings, search flows)
+- 🧪 End-to-end & API testing using Cypress and Postman (authentication, listings, search flows)  
 - 🗺 Location search with OpenStreetMap geocoding & Leaflet maps
 - 📝 Reviews & ratings system
 - 🔍 Search and category-based filtering
@@ -27,6 +27,7 @@ StayWander is a modern full-stack accommodation platform designed to simulate a 
 **Database:** MongoDB Atlas, Mongoose  
 **Authentication:** Passport.js, Sessions, Cookies  
 **Integrations:** Cloudinary, Multer, Joi, OpenStreetMap (Nominatim), Leaflet.js  
+**Testing:** Cypress, Postman  
 **Deployment:** Render, MongoDB Atlas (GitHub auto-deploy, environment-based config)
 
 ---
@@ -70,15 +71,17 @@ It demonstrates hands-on experience in:
 - Cloud services and third-party API integrations
 - Database schema design and relationships
 - Deployment workflows and environment configuration
+- Writing and executing automated test cases to ensure system reliability
 
 ---
 
-## 🧪 Testing (Cypress)
+## 🧪 Testing (Cypress & Postman)
 
-- Implemented **end-to-end testing using Cypress**
+- Implemented **end-to-end testing using Cypress** for UI validation
+- Used **Postman for API testing and endpoint verification**
 - Covered:
   - User authentication (login flow)
-  - Listings page rendering
+  - Listings API & data handling
   - Search and navigation flows
 - Ensures application stability and real-world reliability
 
